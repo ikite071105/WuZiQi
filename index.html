@@ -68,6 +68,8 @@
         board.fillStyle = 'lightyellow';
         board.fillRect(board_startH,board_startH,board_W,board_H);
 
+        dis = (board_W) / (wzq.size-1);
+
         //纵轴线
         for(let i = 0; i < wzq.size; i++){
             board.save();
@@ -209,11 +211,8 @@
             newgamePath.rect(w/2 - btnW/2,btnY,btnW,btnH);
 
             board.fillStyle = 'rgb(125,149,146)'; 
-            board.shadowBlur = 10;
-            board.shadowColor = "rgba(0,0,0,0.2)";
             board.fill(newgamePath);
             
-            board.shadowBlur = 0; 
             board.fillStyle = 'white';
             board.font = (fontSize) + 'px Arial';
             board.fillText("点击开始新游戏",w/2,btnY + btnH/2);
@@ -221,16 +220,92 @@
             board.restore();
         }
         
+        function draw_boardSet(draw_board, board, board_startW, board_startH, board_W, board_H, wzq, w, h) {
+            draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
+
+            board.save();
+            board.fillStyle = 'rgba(0,0,70,0.4)';
+            board.fillRect(0, 0, w, h);
+
+            board.fillStyle = 'lightblue';
+            board.fillRect(0, h/3, w, h/3);
+            
+            board.fillStyle = 'white';
+            let text_W = w - w/15;
+            let text_H = h/3 - h/15;
+            let text_StartW = (w - text_W) / 2;
+            let text_StartH = h/3 + (h/3 - text_H) / 2;
+            board.fillRect(text_StartW, text_StartH, text_W, text_H);
+
+            let fontSize = text_H / 8;
+            board.fillStyle = 'black';
+            board.font = fontSize+'px Arial';
+            board.textAlign = 'center';
+            board.fillText("棋盘大小设置", w/2, text_StartH + fontSize * 1.5);
+
+            // [▼] [size] [▲]
+            let row2Y = text_StartH + text_H * 0.45;
+            let btnSide = fontSize * 2; // 按钮边长
+            
+            // [▼]
+            sizeMinusPath = new Path2D();
+            sizeMinusPath.rect(w/2 - btnSide * 2, row2Y - btnSide/2, btnSide, btnSide);
+            board.fillStyle = '#f0f0f0';
+            board.fill(sizeMinusPath);
+            board.strokeStyle = '#ccc';
+            board.stroke(sizeMinusPath);
+            board.fillStyle = 'black';
+            board.fillText("▼", w/2 - btnSide * 1.5, row2Y + fontSize/3);
+
+            // size
+            board.font = fontSize*1.2 + 'px Arial';
+            board.fillText(size, w/2, row2Y + fontSize/3);
+            
+            // [▲]
+            sizePlusPath = new Path2D();
+            sizePlusPath.rect(w/2 + btnSide, row2Y - btnSide/2, btnSide, btnSide);
+            board.fillStyle = '#f0f0f0';
+            board.fill(sizePlusPath);
+            board.stroke(sizePlusPath);
+            board.fillStyle = 'black';
+            board.fillText("▲", w/2 + btnSide * 1.5, row2Y + fontSize/3);
+
+            // [确认] [取消]
+            let btnW = text_W / 4;
+            let btnH = fontSize * 1.8;
+            let row3Y = text_StartH + text_H * 0.75;
+
+            sizeConfirmPath = new Path2D();
+            sizeConfirmPath.rect(w/2 - btnW - 20, row3Y, btnW, btnH);
+            board.fillStyle = 'lightgreen';
+            board.fill(sizeConfirmPath);
+            board.fillStyle = 'black';
+            board.font = fontSize*0.8+'px Arial';;
+            board.fillText("确认", w/2 - btnW/2 - 20, row3Y + btnH/2 + 5);
+
+            sizeCancelPath = new Path2D();
+            sizeCancelPath.rect(w/2 + 20, row3Y, btnW, btnH);
+            board.fillStyle = 'pink';
+            board.fill(sizeCancelPath);
+            board.fillStyle = 'black';
+            board.fillText("取消", w/2 + btnW/2 + 20, row3Y + btnH/2 + 5);
+
+            board.restore();
+        }
+
         function render(){
             board.clearRect(0,0,w,h);
             if(gameState.current==gameState.PLAYING){
                 draw_board(board,board_startW,board_startH,board_W,board_H,wzq);
             }
-            if(gameState.current==gameState.NEWGAME){
+            else if(gameState.current==gameState.NEWGAME){
                 draw_newGame(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
             }
-            if(gameState.current==gameState.GAMEOVER){
+            else if(gameState.current==gameState.GAMEOVER){
                 draw_gameOver(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
+            }
+            else if(gameState.current==gameState.BOARDSET){
+                draw_boardSet(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
             }
             requestAnimationFrame(render);
         }
@@ -260,7 +335,7 @@
             } 
         }}
         //新游戏：确认或取消
-        if(gameState.current==gameState.NEWGAME){
+        else if(gameState.current==gameState.NEWGAME){
             let isConfirm = board.isPointInPath(this.confirmPath,x0,y0);
             let isCancel = board.isPointInPath(this.cancelPath,x0,y0);
             if(isCancel || isConfirm){
@@ -271,10 +346,29 @@
             }     
         }
         //游戏结束：点击开始新游戏
-        if(gameState.current==gameState.GAMEOVER){
+        else if(gameState.current==gameState.GAMEOVER){
             let isNewgame = board.isPointInPath(this.newgamePath,x0,y0);
             if(isNewgame){
                 wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                gameState.current = gameState.PLAYING;
+            }     
+        }
+        //棋盘大小设置
+        else if(gameState.current==gameState.BOARDSET){
+            let isPlus = board.isPointInPath(this.sizePlusPath,x0,y0);
+            let isMinus = board.isPointInPath(this.sizeMinusPath,x0,y0);
+            let isConfirm = board.isPointInPath(this.sizeConfirmPath,x0,y0);
+            let isCancel = board.isPointInPath(this.sizeCancelPath,x0,y0);
+            if(isPlus&&size<20) size++;
+            if(isMinus&&size>8) size--;
+            if(isCancel || isConfirm){
+                if(isConfirm){
+                    wzq.size = size;
+                    wzq = new GobangGame(size);
+                    wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                }else{
+                    size = wzq.size;
+                }
                 gameState.current = gameState.PLAYING;
             }     
         }
