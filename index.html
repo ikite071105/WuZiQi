@@ -336,8 +336,8 @@
         }}
         //新游戏：确认或取消
         else if(gameState.current==gameState.NEWGAME){
-            let isConfirm = board.isPointInPath(this.confirmPath,x0,y0);
-            let isCancel = board.isPointInPath(this.cancelPath,x0,y0);
+            let isConfirm = board.isPointInPath(confirmPath,x0,y0);
+            let isCancel = board.isPointInPath(cancelPath,x0,y0);
             if(isCancel || isConfirm){
                 if(isConfirm){
                     wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
@@ -347,7 +347,7 @@
         }
         //游戏结束：点击开始新游戏
         else if(gameState.current==gameState.GAMEOVER){
-            let isNewgame = board.isPointInPath(this.newgamePath,x0,y0);
+            let isNewgame = board.isPointInPath(newgamePath,x0,y0);
             if(isNewgame){
                 wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
                 gameState.current = gameState.PLAYING;
@@ -355,10 +355,10 @@
         }
         //棋盘大小设置
         else if(gameState.current==gameState.BOARDSET){
-            let isPlus = board.isPointInPath(this.sizePlusPath,x0,y0);
-            let isMinus = board.isPointInPath(this.sizeMinusPath,x0,y0);
-            let isConfirm = board.isPointInPath(this.sizeConfirmPath,x0,y0);
-            let isCancel = board.isPointInPath(this.sizeCancelPath,x0,y0);
+            let isPlus = board.isPointInPath(sizePlusPath,x0,y0);
+            let isMinus = board.isPointInPath(sizeMinusPath,x0,y0);
+            let isConfirm = board.isPointInPath(sizeConfirmPath,x0,y0);
+            let isCancel = board.isPointInPath(sizeCancelPath,x0,y0);
             if(isPlus&&size<20) size++;
             if(isMinus&&size>8) size--;
             if(isCancel || isConfirm){
