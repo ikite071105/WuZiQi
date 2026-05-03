@@ -2,6 +2,8 @@
 const gameState = {
     PLAYING:'playing',
     GAMEOVER:'gameover',
+    MODESET_0:'modeset_0',
+    MODESET_1:'modeset_1',
     NEWGAME:'newgame',
     MODECHOOSE:'modechoose',
     BOARDSET:'boardset',
