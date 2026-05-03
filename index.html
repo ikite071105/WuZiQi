@@ -11,10 +11,22 @@
             align-items:baseline;
             width: 100%;
             height: 4vh;
+            margin-top: 4%;
+        }
+        #lowerItems {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+        }
+        #rightChild button {
+            padding: 5px 15px;
+            margin-left: 10px;
         }
     </style>
 </head>
 <body>
+    <div>这里写胜负情况</div>
     <div id="upperButtons">
         <button id="newGame" onclick="newGame_click(gameState)">新游戏</button>
         <button id="modeChoose" onclick="modeChoose_click(gameState)">模式选择</button>
@@ -29,10 +41,21 @@
     <div id="lowerItems">
         <div id="leftChild">
             <span id="currentChess"></span>
+            <br>
+            <span id="regret">悔棋功能：
+                <!-- 绑定 onchange，并传入 true/false -->
+                <input type="radio" name="regret_choice" onchange="setRegret(true)">开
+                <input type="radio" name="regret_choice" onchange="setRegret(false)" checked>关
+            </span>
+        </div>
+        <div id="rightChild" style="display: none;">
+            <button onclick="regretAction()">悔棋</button>
+            <button onclick="confirmAction()">确认落子</button>
         </div>
     </div>
 
     <script src="./GameStruct.js"></script>
+    <script src="./webDraw.js"></script>
     <script src="./keyFunction.js"></script>
 
     <script>
@@ -42,6 +65,20 @@
         let chessW = new Chess('white');
         let current_chess = 0; //0白；1黑
         let current_mode = 0;  //0人人；1人机
+        //悔棋
+        let regret_enable = false;
+        //上一步落子坐标
+        let lastStep = { x: -1, y: -1 };
+        //等待确认
+        let isWaitingConfirm = false;
+        //黑白正负次数记录
+        let winCount_B = 0;
+        let winCount_W = 0;
+        //先手颜色
+        let colorFirst = 0; //0白1黑
+        //人机模式下玩家的颜色及先后手
+        let playerColor = 0;
+        let playerFirst = 1;
     </script>
 
     <script>
@@ -63,47 +100,26 @@
         //棋盘间距
         let dis = (board_W) / (wzq.size-1);
 
-        //棋盘绘制函数（包括棋子
-        function draw_board(board,board_startW,board_startH,board_W,board_H,wzq){
-        board.fillStyle = 'lightyellow';
-        board.fillRect(board_startH,board_startH,board_W,board_H);
-
-        dis = (board_W) / (wzq.size-1);
-
-        //纵轴线
-        for(let i = 0; i < wzq.size; i++){
-            board.save();
-            board.beginPath();
-            board.moveTo(board_startW+i*dis,board_startH);
-            board.lineTo(board_startW+i*dis,board_startH+board_H);
-            board.stroke();
-            board.closePath();
-            board.restore();
-        }
-        //横轴线
-        for(let i = 0; i < wzq.size; i++){
-            board.save();
-            board.beginPath();
-            board.moveTo(board_startW,board_startH+i*dis);
-            board.lineTo(board_startW+board_W,board_startH+i*dis);
-            board.stroke();
-            board.closePath();
-            board.restore();
-        }
-
-        for(let i = 0; i < wzq.size; i++){
-            for(let j = 0; j < wzq.size; j++){
-                if(wzq.board[i][j]){
-                    if(wzq.board[i][j]-1){
-                        chessB.draw(board,dis/3,i,j,board_startW,board_startH,dis);
-                    }else{
-                        chessW.draw(board,dis/3,i,j,board_startW,board_startH,dis);
-                    }
-                }
+        function render() {
+            board.clearRect(0, 0, w, h);
+            // 永远先画底色或基础棋盘
+            if (gameState.current !== gameState.PLAYING) {
+                // 非进行时可以统一加个背景处理，或者让各函数自己画 draw_board
             }
+
+            switch(gameState.current) {
+                case gameState.PLAYING: draw_board(board, board_startW, board_startH, board_W, board_H, wzq);; break;
+                case gameState.NEWGAME: draw_newGame(board, wzq, w, h); break;
+                case gameState.GAMEOVER: draw_gameOver(board, wzq, w, h, current_chess); break;
+                case gameState.BOARDSET: draw_boardSet(board, wzq, w, h, size); break;
+                case gameState.MODECHOOSE: draw_modeChoose(board, wzq, w, h, current_mode); break;
+                case gameState.MODESET_0: draw_modeSet_0(board, wzq, w, h, colorFirst); break;
+                case gameState.MODESET_1: draw_modeSet_1(board, wzq, w, h, playerColor, playerFirst); break;
+                // ... 其他状态
+            }
+            requestAnimationFrame(render);
         }
-        }
-        //draw_board(board,board_startW,board_startH,board_W,board_H,wzq);
+        render();
 
         //当前行动显示：
         function updateCurrentChessDisplay(){
@@ -115,201 +131,6 @@
             }
         }
         updateCurrentChessDisplay();
-
-        //新游戏确认界面
-        function draw_newGame(draw_board, board, board_startW, board_startH, board_W, board_H, wzq, w, h) {
-            draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
-
-            board.save();
-            board.fillStyle = 'rgba(0,0,70,0.4)';
-            board.fillRect(0,0,w,h);
-            board.restore();
-
-            board.save();
-            board.fillStyle = 'lightblue';
-            board.fillRect(0,h/3,w,h/3);
-            board.restore();
-
-            board.save();
-            board.fillStyle = 'white';
-            let text_StartW = w/30;
-            let text_StartH = h/3+h/30;
-            let text_W = w-w/15;
-            let text_H = h/3-h/15;
-            board.fillRect(text_StartW,text_StartH,text_W,text_H);
-            board.restore();
-
-            board.save();
-            let fontSize = text_H / 6;
-            board.fillStyle = 'black';
-            board.font = fontSize+'px serif';
-            board.textAlign = 'center';
-            board.textBaseline = 'middle';
-            board.fillText("确定开始新游戏？",w/2,h/3+5*text_H/12);
-
-            // 按键
-            let btnW = text_W/4; 
-            let btnH = fontSize*1.5; 
-            let btnY = h/2+fontSize;
-
-            confirmPath = new Path2D();
-            confirmPath.rect(w/2-btnW-20,btnY,btnW,btnH);
-            
-            cancelPath = new Path2D();
-            cancelPath.rect(w/2+20, btnY, btnW, btnH);
-            // 确认
-            board.fillStyle = 'lightgreen'; 
-            board.fill(confirmPath);
-            board.fillStyle = 'black';
-            board.fillText("确认",w/2-btnW/2-20,btnY+btnH/2);
-            // 取消
-            board.fillStyle = 'pink'; 
-            board.fill(cancelPath);
-            board.fillStyle = 'black';
-            board.fillText("取消",w/2+btnW/2+20,btnY+btnH/2);
-            board.restore();
-        }
-        //draw_newGame(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
-
-        function draw_gameOver(draw_board, board, board_startW, board_startH, board_W, board_H, wzq, w, h) {
-            draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
-
-            board.save();
-            board.fillStyle = 'rgba(0,0,70,0.4)';
-            board.fillRect(0,0,w,h);
-            board.restore();
-
-            board.save();
-            board.fillStyle = 'lightblue';
-            board.fillRect(0,h/3,w,h/3);
-            board.restore();
-
-            board.save();
-            board.fillStyle = 'white';
-            let text_StartW = w/30;
-            let text_StartH = h/3+h/30;
-            let text_W = w-w/15;
-            let text_H = h/3-h/15;
-            board.fillRect(text_StartW,text_StartH,text_W,text_H);
-            board.restore();
-
-            board.save();
-            let fontSize = text_H / 6;
-            board.fillStyle = 'black';
-            board.font = fontSize+'px serif';
-            board.textAlign = 'center';
-            board.textBaseline = 'middle';
-            let winner = (current_chess == 1) ? '● 黑子' : '○ 白子';
-            board.fillText("游戏结束，胜者为 " + winner, w/2, h/3 + text_H/3);
-
-            // [点击开始新游戏]
-            let btnW = text_W*0.8;
-            let btnH = fontSize*1.8; 
-            let btnY = h/3 + text_H*0.6; 
-
-            newgamePath = new Path2D();
-            newgamePath.rect(w/2 - btnW/2,btnY,btnW,btnH);
-
-            board.fillStyle = 'rgb(125,149,146)'; 
-            board.fill(newgamePath);
-            
-            board.fillStyle = 'white';
-            board.font = (fontSize) + 'px Arial';
-            board.fillText("点击开始新游戏",w/2,btnY + btnH/2);
-            
-            board.restore();
-        }
-        
-        function draw_boardSet(draw_board, board, board_startW, board_startH, board_W, board_H, wzq, w, h) {
-            draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
-
-            board.save();
-            board.fillStyle = 'rgba(0,0,70,0.4)';
-            board.fillRect(0, 0, w, h);
-
-            board.fillStyle = 'lightblue';
-            board.fillRect(0, h/3, w, h/3);
-            
-            board.fillStyle = 'white';
-            let text_W = w - w/15;
-            let text_H = h/3 - h/15;
-            let text_StartW = (w - text_W) / 2;
-            let text_StartH = h/3 + (h/3 - text_H) / 2;
-            board.fillRect(text_StartW, text_StartH, text_W, text_H);
-
-            let fontSize = text_H / 8;
-            board.fillStyle = 'black';
-            board.font = fontSize+'px Arial';
-            board.textAlign = 'center';
-            board.fillText("棋盘大小设置", w/2, text_StartH + fontSize * 1.5);
-
-            // [▼] [size] [▲]
-            let row2Y = text_StartH + text_H * 0.45;
-            let btnSide = fontSize * 2; // 按钮边长
-            
-            // [▼]
-            sizeMinusPath = new Path2D();
-            sizeMinusPath.rect(w/2 - btnSide * 2, row2Y - btnSide/2, btnSide, btnSide);
-            board.fillStyle = '#f0f0f0';
-            board.fill(sizeMinusPath);
-            board.strokeStyle = '#ccc';
-            board.stroke(sizeMinusPath);
-            board.fillStyle = 'black';
-            board.fillText("▼", w/2 - btnSide * 1.5, row2Y + fontSize/3);
-
-            // size
-            board.font = fontSize*1.2 + 'px Arial';
-            board.fillText(size, w/2, row2Y + fontSize/3);
-            
-            // [▲]
-            sizePlusPath = new Path2D();
-            sizePlusPath.rect(w/2 + btnSide, row2Y - btnSide/2, btnSide, btnSide);
-            board.fillStyle = '#f0f0f0';
-            board.fill(sizePlusPath);
-            board.stroke(sizePlusPath);
-            board.fillStyle = 'black';
-            board.fillText("▲", w/2 + btnSide * 1.5, row2Y + fontSize/3);
-
-            // [确认] [取消]
-            let btnW = text_W / 4;
-            let btnH = fontSize * 1.8;
-            let row3Y = text_StartH + text_H * 0.75;
-
-            sizeConfirmPath = new Path2D();
-            sizeConfirmPath.rect(w/2 - btnW - 20, row3Y, btnW, btnH);
-            board.fillStyle = 'lightgreen';
-            board.fill(sizeConfirmPath);
-            board.fillStyle = 'black';
-            board.font = fontSize*0.8+'px Arial';;
-            board.fillText("确认", w/2 - btnW/2 - 20, row3Y + btnH/2 + 5);
-
-            sizeCancelPath = new Path2D();
-            sizeCancelPath.rect(w/2 + 20, row3Y, btnW, btnH);
-            board.fillStyle = 'pink';
-            board.fill(sizeCancelPath);
-            board.fillStyle = 'black';
-            board.fillText("取消", w/2 + btnW/2 + 20, row3Y + btnH/2 + 5);
-
-            board.restore();
-        }
-
-        function render(){
-            board.clearRect(0,0,w,h);
-            if(gameState.current==gameState.PLAYING){
-                draw_board(board,board_startW,board_startH,board_W,board_H,wzq);
-            }
-            else if(gameState.current==gameState.NEWGAME){
-                draw_newGame(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
-            }
-            else if(gameState.current==gameState.GAMEOVER){
-                draw_gameOver(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
-            }
-            else if(gameState.current==gameState.BOARDSET){
-                draw_boardSet(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
-            }
-            requestAnimationFrame(render);
-        }
-        render();
     </script>
 
     <script>
@@ -318,22 +139,34 @@
         let x0 = e.offsetX;
         let y0 = e.offsetY;
         //游戏进行时：落子
-        if(gameState.current==gameState.PLAYING){
-        let x1 = xy_from_canvas_to_board(x0,y0,board_startW,board_startH,dis,wzq).x1;
-        let y1 = xy_from_canvas_to_board(x0,y0,board_startW,board_startH,dis,wzq).y1;
+        if (gameState.current == gameState.PLAYING) {
+            // 如果正在等待确认，不允许点棋盘其他地方
+            if (isWaitingConfirm) return;
 
-        if(wzq.board[x1][y1]==0){
-            wzq.board[x1][y1] = current_chess+1;
-            draw_board(board,board_startW,board_startH,board_W,board_H,wzq);
-            if(checkOver(current_chess,x1,y1)){
-                //游戏结束
-                gameState.current = gameState.GAMEOVER;
-                //wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
-            }else{
-                current_chess = 1 - current_chess;
-                updateCurrentChessDisplay();
-            } 
-        }}
+            let x1 = xy_from_canvas_to_board(x0, y0, board_startW, board_startH, dis, wzq).x1;
+            let y1 = xy_from_canvas_to_board(x0, y0, board_startW, board_startH, dis, wzq).y1;
+
+            if (wzq.board[x1][y1] == 0) {
+                // 1. 落下棋子
+                wzq.board[x1][y1] = current_chess + 1;
+                lastStep = { x: x1, y: y1 }; // 记录坐标
+                draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
+
+                // 2. 判断是否开启悔棋功能
+                if (regret_enable) {
+                    isWaitingConfirm = true;
+                    document.getElementById('rightChild').style.display = 'block'; // 显示按钮
+                } else {
+                    // 没开悔棋
+                    if (checkOver(current_chess, x1, y1)) {
+                        gameState.current = gameState.GAMEOVER;
+                    } else {
+                        current_chess = 1 - current_chess;
+                        updateCurrentChessDisplay();
+                    }
+                }
+            }
+        }
         //新游戏：确认或取消
         else if(gameState.current==gameState.NEWGAME){
             let isConfirm = board.isPointInPath(confirmPath,x0,y0);
@@ -371,6 +204,61 @@
                 }
                 gameState.current = gameState.PLAYING;
             }     
+        }
+        //模式选择：人人/人机
+        else if(gameState.current==gameState.MODECHOOSE){
+            let isConfirm = board.isPointInPath(modeConfirmPath,x0,y0);
+            let isCancel = board.isPointInPath(modeCancelPath,x0,y0);
+            let isPVP = board.isPointInPath(pvpPath,x0,y0);
+            let isPVE = board.isPointInPath(pvePath,x0,y0);
+            if(isPVP) current_mode = 0;
+            else if(isPVE) current_mode = 1;
+            else if(isCancel || isConfirm){
+                if(isConfirm){
+                    gameState.current = (current_mode) ? gameState.MODESET_1 : gameState.MODESET_0;
+                }else{
+                    gameState.current = gameState.PLAYING;
+                } 
+            }     
+        }
+        //人人模式：先手选择
+        else if(gameState.current==gameState.MODESET_0){
+            let isConfirm = board.isPointInPath(modeConfirmPath,x0,y0);
+            let isCancel = board.isPointInPath(modeCancelPath,x0,y0);
+            let isBlackFirst = board.isPointInPath(blackFirstPath,x0,y0);
+            let isWhiteFirst = board.isPointInPath(whiteFirstPath,x0,y0);
+            if(isBlackFirst) colorFirst = 1;
+            else if(isWhiteFirst) colorFirst = 0;
+            else if(isConfirm){
+                current_chess = colorFirst;
+                updateCurrentChessDisplay();
+                wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                gameState.current = gameState.PLAYING;
+            }else{
+                gameState.current = gameState.MODECHOOSE;
+            }   
+        }
+        //人机模式：黑白+先后手选择
+        else if(gameState.current==gameState.MODESET_1){
+            let isConfirm = board.isPointInPath(mode1ConfirmPath,x0,y0);
+            let isCancel = board.isPointInPath(mode1CancelPath,x0,y0);
+            let isBlack = board.isPointInPath(playerBlackPath,x0,y0);
+            let isWhite = board.isPointInPath(playerWhitePath,x0,y0);
+            let isFirst = board.isPointInPath(playerFirstPath,x0,y0);
+            let isLast = board.isPointInPath(playerLastPath,x0,y0);
+            if(isBlack) playerColor = 1;
+            else if(isWhite) playerColor = 0;
+            else if(isFirst) playerFirst = 1;
+            else if(isLast) playerFirst = 0;
+            else if(isConfirm){
+                colorFirst = (playerFirst) ? playerColor : 1-playerColor;
+                current_chess = colorFirst;
+                updateCurrentChessDisplay();
+                wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                gameState.current = gameState.PLAYING;
+            }else{
+                gameState.current = gameState.MODECHOOSE;
+            }   
         }
         }
 
@@ -441,6 +329,42 @@
             else{
                 result = 0;
                 return result;
+            }
+        }
+    
+        //悔棋状态更新
+        function setRegret(status) {
+            regret_enable = status;
+            
+            // 调试用，可以在控制台看状态
+            console.log("悔棋功能:", regret_enable ? "已开启" : "已关闭");
+        }
+
+        // 悔棋函数
+        function regretAction() {
+            if (!isWaitingConfirm) return;
+            // 撤子
+            wzq.board[lastStep.x][lastStep.y] = 0;
+            isWaitingConfirm = false;
+            // 隐藏按钮
+            document.getElementById('rightChild').style.display = 'none';
+
+            draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
+        }
+
+        // 确认函数
+        function confirmAction() {
+            if (!isWaitingConfirm) return;
+
+            isWaitingConfirm = false;
+            document.getElementById('rightChild').style.display = 'none';
+
+            // 检查胜负
+            if (checkOver(current_chess, lastStep.x, lastStep.y)) {
+                gameState.current = gameState.GAMEOVER;
+            } else {
+                current_chess = 1 - current_chess;
+                updateCurrentChessDisplay();
             }
         }
     </script>
