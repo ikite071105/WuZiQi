@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #upperButtons{
+            display: flex;
+            justify-content: space-around;
+            align-items:baseline;
+            width: 100%;
+            height: 4vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="upperButtons">
+        <button id="newGame" onclick="newGame_click(gameState)">新游戏</button>
+        <button id="modeChoose" onclick="modeChoose_click(gameState)">模式选择</button>
+        <button id="boardSet" onclick="boardSet_click(gameState)">棋盘设置</button>
+        <button id="ooooohhhh" onclick="ooooohhhh_click(gameState)">开挂?!</button>
+    </div>
+    
+
+    <canvas id="chessboard">
+    </canvas>
+
+    <div id="lowerItems">
+        <div id="leftChild">
+            <span id="currentChess"></span>
+        </div>
+    </div>
+
+    <script src="./GameStruct.js"></script>
+    <script src="./keyFunction.js"></script>
+
+    <script>
+        let size = 12;
+        let wzq = new GobangGame(size);
+        let chessB = new Chess('black');
+        let chessW = new Chess('white');
+        let current_chess = 0; //0白；1黑
+        let current_mode = 0;  //0人人；1人机
+    </script>
+
+    <script>
+        //绘图用
+        //棋盘区域
+        let w = window.innerWidth;
+        let h = w;
+        var boardCanvas = document.getElementById('chessboard');
+        boardCanvas.width = w;
+        boardCanvas.height = h;
+        // 获取画笔（上下文对象）
+        var board = boardCanvas.getContext('2d');
+        console.log(board);
+
+        let board_startW = w/12;
+        let board_startH = h/12;
+        let board_W = 10*w/12;
+        let board_H = 10*h/12;
+        //棋盘间距
+        let dis = (board_W) / (wzq.size-1);
+
+        //棋盘绘制函数（包括棋子
+        function draw_board(board,board_startW,board_startH,board_W,board_H,wzq){
+        board.fillStyle = 'lightyellow';
+        board.fillRect(board_startH,board_startH,board_W,board_H);
+
+        //纵轴线
+        for(let i = 0; i < wzq.size; i++){
+            board.save();
+            board.beginPath();
+            board.moveTo(board_startW+i*dis,board_startH);
+            board.lineTo(board_startW+i*dis,board_startH+board_H);
+            board.stroke();
+            board.closePath();
+            board.restore();
+        }
+        //横轴线
+        for(let i = 0; i < wzq.size; i++){
+            board.save();
+            board.beginPath();
+            board.moveTo(board_startW,board_startH+i*dis);
+            board.lineTo(board_startW+board_W,board_startH+i*dis);
+            board.stroke();
+            board.closePath();
+            board.restore();
+        }
+
+        for(let i = 0; i < wzq.size; i++){
+            for(let j = 0; j < wzq.size; j++){
+                if(wzq.board[i][j]){
+                    if(wzq.board[i][j]-1){
+                        chessB.draw(board,dis/3,i,j,board_startW,board_startH,dis);
+                    }else{
+                        chessW.draw(board,dis/3,i,j,board_startW,board_startH,dis);
+                    }
+                }
+            }
+        }
+        }
+        //draw_board(board,board_startW,board_startH,board_W,board_H,wzq);
+
+        //当前行动显示：
+        function updateCurrentChessDisplay(){
+            const chessDiv = document.getElementById('currentChess');
+            if(current_chess){
+                chessDiv.innerText = '当前行动：●黑子';
+            }else{
+                chessDiv.innerText = '当前行动：○白子';
+            }
+        }
+        updateCurrentChessDisplay();
+
+        //新游戏确认界面
+        function draw_newGame(draw_board, board, board_startW, board_startH, board_W, board_H, wzq, w, h) {
+            draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
+
+            board.save();
+            board.fillStyle = 'rgba(0,0,70,0.4)';
+            board.fillRect(0,0,w,h);
+            board.restore();
+
+            board.save();
+            board.fillStyle = 'lightblue';
+            board.fillRect(0,h/3,w,h/3);
+            board.restore();
+
+            board.save();
+            board.fillStyle = 'white';
+            let text_StartW = w/30;
+            let text_StartH = h/3+h/30;
+            let text_W = w-w/15;
+            let text_H = h/3-h/15;
+            board.fillRect(text_StartW,text_StartH,text_W,text_H);
+            board.restore();
+
+            board.save();
+            let fontSize = text_H / 6;
+            board.fillStyle = 'black';
+            board.font = fontSize+'px serif';
+            board.textAlign = 'center';
+            board.textBaseline = 'middle';
+            board.fillText("确定开始新游戏？",w/2,h/3+5*text_H/12);
+
+            // 按键
+            let btnW = text_W/4; 
+            let btnH = fontSize*1.5; 
+            let btnY = h/2+fontSize;
+
+            confirmPath = new Path2D();
+            confirmPath.rect(w/2-btnW-20,btnY,btnW,btnH);
+            
+            cancelPath = new Path2D();
+            cancelPath.rect(w/2+20, btnY, btnW, btnH);
+            // 确认
+            board.fillStyle = 'lightgreen'; 
+            board.fill(confirmPath);
+            board.fillStyle = 'black';
+            board.fillText("确认",w/2-btnW/2-20,btnY+btnH/2);
+            // 取消
+            board.fillStyle = 'pink'; 
+            board.fill(cancelPath);
+            board.fillStyle = 'black';
+            board.fillText("取消",w/2+btnW/2+20,btnY+btnH/2);
+            board.restore();
+        }
+        //draw_newGame(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
+
+        function draw_gameOver(draw_board, board, board_startW, board_startH, board_W, board_H, wzq, w, h) {
+            draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
+
+            board.save();
+            board.fillStyle = 'rgba(0,0,70,0.4)';
+            board.fillRect(0,0,w,h);
+            board.restore();
+
+            board.save();
+            board.fillStyle = 'lightblue';
+            board.fillRect(0,h/3,w,h/3);
+            board.restore();
+
+            board.save();
+            board.fillStyle = 'white';
+            let text_StartW = w/30;
+            let text_StartH = h/3+h/30;
+            let text_W = w-w/15;
+            let text_H = h/3-h/15;
+            board.fillRect(text_StartW,text_StartH,text_W,text_H);
+            board.restore();
+
+            board.save();
+            let fontSize = text_H / 6;
+            board.fillStyle = 'black';
+            board.font = fontSize+'px serif';
+            board.textAlign = 'center';
+            board.textBaseline = 'middle';
+            let winner = (current_chess == 1) ? '● 黑子' : '○ 白子';
+            board.fillText("游戏结束，胜者为 " + winner, w/2, h/3 + text_H/3);
+
+            // [点击开始新游戏]
+            let btnW = text_W*0.8;
+            let btnH = fontSize*1.8; 
+            let btnY = h/3 + text_H*0.6; 
+
+            newgamePath = new Path2D();
+            newgamePath.rect(w/2 - btnW/2,btnY,btnW,btnH);
+
+            board.fillStyle = 'rgb(125,149,146)'; 
+            board.shadowBlur = 10;
+            board.shadowColor = "rgba(0,0,0,0.2)";
+            board.fill(newgamePath);
+            
+            board.shadowBlur = 0; 
+            board.fillStyle = 'white';
+            board.font = (fontSize) + 'px Arial';
+            board.fillText("点击开始新游戏",w/2,btnY + btnH/2);
+            
+            board.restore();
+        }
+        
+        function render(){
+            board.clearRect(0,0,w,h);
+            if(gameState.current==gameState.PLAYING){
+                draw_board(board,board_startW,board_startH,board_W,board_H,wzq);
+            }
+            if(gameState.current==gameState.NEWGAME){
+                draw_newGame(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
+            }
+            if(gameState.current==gameState.GAMEOVER){
+                draw_gameOver(draw_board,board,board_startW,board_startH,board_W,board_H,wzq,w,h);
+            }
+            requestAnimationFrame(render);
+        }
+        render();
+    </script>
+
+    <script>
+        //棋盘点击事件
+       boardCanvas.onclick = (e) => {
+        let x0 = e.offsetX;
+        let y0 = e.offsetY;
+        //游戏进行时：落子
+        if(gameState.current==gameState.PLAYING){
+        let x1 = xy_from_canvas_to_board(x0,y0,board_startW,board_startH,dis,wzq).x1;
+        let y1 = xy_from_canvas_to_board(x0,y0,board_startW,board_startH,dis,wzq).y1;
+
+        if(wzq.board[x1][y1]==0){
+            wzq.board[x1][y1] = current_chess+1;
+            draw_board(board,board_startW,board_startH,board_W,board_H,wzq);
+            if(checkOver(current_chess,x1,y1)){
+                //游戏结束
+                gameState.current = gameState.GAMEOVER;
+                //wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+            }else{
+                current_chess = 1 - current_chess;
+                updateCurrentChessDisplay();
+            } 
+        }}
+        //新游戏：确认或取消
+        if(gameState.current==gameState.NEWGAME){
+            let isConfirm = board.isPointInPath(this.confirmPath,x0,y0);
+            let isCancel = board.isPointInPath(this.cancelPath,x0,y0);
+            if(isCancel || isConfirm){
+                if(isConfirm){
+                    wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                } 
+                gameState.current = gameState.PLAYING;
+            }     
+        }
+        //游戏结束：点击开始新游戏
+        if(gameState.current==gameState.GAMEOVER){
+            let isNewgame = board.isPointInPath(this.newgamePath,x0,y0);
+            if(isNewgame){
+                wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                gameState.current = gameState.PLAYING;
+            }     
+        }
+        }
+
+        //胜利检测
+        function checkOver(current_chess,x1,y1){
+            let count = 1;
+            let temp_x = x1-1;
+            let result = 1;
+            //纵连
+            while(temp_x>=0 && wzq.board[temp_x][y1]==current_chess+1){
+                temp_x--;
+                count++;
+            }
+            temp_x = x1+1;
+            while(temp_x<wzq.size && wzq.board[temp_x][y1]==current_chess+1){
+                temp_x++;
+                count++;
+            }
+            if(count>=5) return result;
+            //横连
+            let temp_y = y1-1;
+            count = 1;
+            while(temp_y>=0 && wzq.board[x1][temp_y]==current_chess+1){
+                temp_y--;
+                count++;
+            }
+            temp_y = y1+1;
+            while(temp_y<wzq.size && wzq.board[x1][temp_y]==current_chess+1){
+                temp_y++;
+                count++;
+            }
+            if(count>=5) return result;
+            //斜连(左上往右下)
+            temp_x = x1-1;
+            temp_y = y1-1;
+            count = 1;
+            while(temp_x>=0&&temp_y>=0 && wzq.board[temp_x][temp_y]==current_chess+1){
+                temp_x--;
+                temp_y--;
+                count++;
+            }
+            temp_x = x1+1;
+            temp_y = y1+1;
+            while(temp_x<wzq.size&&temp_y<wzq.size && wzq.board[temp_x][temp_y]==current_chess+1){
+                temp_x++;
+                temp_y++;
+                count++;
+            }
+            if(count>=5) return result;
+
+            //斜连（左下往右上）
+            temp_x = x1-1;
+            temp_y = y1+1;
+            count = 1;
+            while(temp_x>=0&&temp_y<wzq.size && wzq.board[temp_x][temp_y]==current_chess+1){
+                temp_x--;
+                temp_y++;
+                count++;
+            }
+            temp_x = x1+1;
+            temp_y = y1-1;
+            while(temp_x<wzq.size&&temp_y>=0 && wzq.board[temp_x][temp_y]==current_chess+1){
+                temp_x++;
+                temp_y--;
+                count++;
+            }
+            if(count>=5) return result;
+            else{
+                result = 0;
+                return result;
+            }
+        }
+    </script>
+
+    
+</body>
+</html>
