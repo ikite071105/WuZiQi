@@ -13,9 +13,9 @@ const SCORE = {
     // 冲四/跳四：一头被堵/中间有空位
     '011112': 5000,
     '211110': 5000,
-    '10111': 5200,
-    '11011': 5200,
-    '11101': 5200,
+    '10111': 5100,
+    '11011': 5000,
+    '11101': 5100,
 
     // 活三，两头通
     '011100': 3000,
@@ -29,8 +29,8 @@ const SCORE = {
     '211100': 500,
     '010112': 450,
     '211010': 450,
-    '10011': 350,
-    '11001': 350,
+    '10011': 400,
+    '11001': 400,
 
     // 活二
     '001100': 100,
@@ -43,7 +43,9 @@ const SCORE = {
 };
 
 //ai行动：普通
+// aiAction：引入同分随机化
 function aiAction_normal(wzq, aiColor) {
+    console.trace("AI Action 被调用");
     let bestScore = -1;
     let bestMoves = []; // 存储所有最高分的坐标点
     let playerColor = 1 - aiColor;
@@ -52,7 +54,7 @@ function aiAction_normal(wzq, aiColor) {
         for (let j = 0; j < wzq.size; j++) {
             if (wzq.board[i][j] === 0) {
                 // 计算该点的综合分值
-                let score = evaluatePoint(wzq, i, j, aiColor) + evaluatePoint(wzq, i, j, playerColor) * 0.8;
+                let score = evaluatePoint(wzq, i, j, aiColor) + evaluatePoint(wzq, i, j, playerColor);
                 
                 if (score > bestScore) {
                     // 发现更好的点，重置数组
@@ -69,6 +71,7 @@ function aiAction_normal(wzq, aiColor) {
     // 从所有最高分的位置中随机选一个
     if (bestMoves.length > 0) {
         const randomIndex = Math.floor(Math.random() * bestMoves.length);
+        console.log("AI落子坐标:"+bestMoves[randomIndex][0]+','+bestMoves[randomIndex][1]);
         return bestMoves[randomIndex];
     }
 
