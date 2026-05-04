@@ -73,6 +73,7 @@
     <script src="./GameStruct.js"></script>
     <script src="./webDraw.js"></script>
     <script src="./keyFunction.js"></script>
+    <script src="./ai.js"></script>
 
     <script>
         let size = 12;
@@ -94,7 +95,8 @@
         let colorFirst = 0; //0白1黑
         //人机模式下玩家的颜色及先后手
         let playerColor = 0;
-        let playerFirst = 1;
+        let playerFirst = 1;    //1玩家0人机
+        let current_player = 1; //1玩家0人机
     </script>
 
     <script>
@@ -155,7 +157,9 @@
         let x0 = e.offsetX;
         let y0 = e.offsetY;
         //游戏进行时：落子
-        if (gameState.current == gameState.PLAYING) {
+        //条件：人人 或 人机&&玩家行动
+        if (gameState.current == gameState.PLAYING && 
+        ((!current_mode) || (current_mode && current_player))) {
             // 如果正在等待确认，不允许点棋盘其他地方
             if (isWaitingConfirm) return;
 
@@ -181,6 +185,24 @@
                         updateCurrentChessDisplay();
                     }
                 }
+                //人下完了人机下
+                if(current_mode){
+                    current_player ^= current_player;//感觉事后可以删掉
+                    //调用人机下棋函数
+                    setTimeout(() => {
+                        let x = aiAction_normal(wzq,current_chess)[0];
+                        let y = aiAction_normal(wzq,current_chess)[1];
+                        wzq.board[x][y] = current_chess + 1;
+                        current_player = 0;
+                        if (checkOver(current_chess, x, y)) {
+                            gameState.current = gameState.GAMEOVER;
+                        } else {
+                            current_chess = 1 - current_chess;
+                            updateCurrentChessDisplay();
+                        }
+                        current_player = 1;
+                    }, 1000);
+                }
             }
         }
         //新游戏：确认或取消
@@ -189,7 +211,7 @@
             let isCancel = board.isPointInPath(cancelPath,x0,y0);
             if(isCancel || isConfirm){
                 if(isConfirm){
-                    wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                    startNewGame();
                 } 
                 gameState.current = gameState.PLAYING;
             }     
@@ -198,7 +220,7 @@
         else if(gameState.current==gameState.GAMEOVER){
             let isNewgame = board.isPointInPath(newgamePath,x0,y0);
             if(isNewgame){
-                wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                startNewGame();
                 gameState.current = gameState.PLAYING;
             }     
         }
@@ -214,7 +236,7 @@
                 if(isConfirm){
                     wzq.size = size;
                     wzq = new GobangGame(size);
-                    wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                    startNewGame();
                 }else{
                     size = wzq.size;
                 }
@@ -248,7 +270,7 @@
             else if(isConfirm){
                 current_chess = colorFirst;
                 updateCurrentChessDisplay();
-                wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                startNewGame();
                 gameState.current = gameState.PLAYING;
             }else{
                 gameState.current = gameState.MODECHOOSE;
@@ -270,7 +292,7 @@
                 colorFirst = (playerFirst) ? playerColor : 1-playerColor;
                 current_chess = colorFirst;
                 updateCurrentChessDisplay();
-                wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+                startNewGame();
                 gameState.current = gameState.PLAYING;
             }else{
                 gameState.current = gameState.MODECHOOSE;
@@ -381,6 +403,29 @@
             } else {
                 current_chess = 1 - current_chess;
                 updateCurrentChessDisplay();
+            }
+        }
+
+        //开启新游戏的函数
+        function startNewGame(){
+            wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+            if(current_mode){
+                //人机模式
+                if(playerFirst){
+                    current_chess = playerColor;
+                    current_player = 1;
+                }else{
+                    current_player = 0;
+                    current_chess = 1-playerColor;
+                    setTimeout(() => {
+                    let x = aiAction_easy(wzq)[0];
+                    let y = aiAction_easy(wzq)[1];
+                    wzq.board[x][y] = current_chess + 1;
+                    current_player = 1;
+                    current_chess = 1 - current_chess;
+                    updateCurrentChessDisplay();
+                }, 1000);
+                }
             }
         }
     </script>
