@@ -299,7 +299,60 @@ function draw_modeSet_1(ctx, wzq, w, h, playerColor, playerFirst) {
 
     // 底部控制按钮：确认 / 返回
     // 使用与 modeSet_0 相同的 ctrlBtnW 和间隔
-    const ctrlBtnY = startY + modalH - bh - 25; // 距离底部留出固定感
+    const ctrlBtnY = startY + modalH - bh - 18; // 距离底部留出固定感
     mode1ConfirmPath = drawButton(ctx, w/2 - ctrlBtnW - 20, ctrlBtnY, ctrlBtnW, bh, "确认", UI_CONFIG.colors.success, fs * 0.7);
     mode1CancelPath = drawButton(ctx, w/2 + 20, ctrlBtnY, ctrlBtnW, bh, "返回", UI_CONFIG.colors.danger, fs * 0.7);
+}
+
+// 比分栏绘制
+function drawWinCount(ctx, w, h, winB, winW, mode) {
+    ctx.clearRect(0, 0, w, h);
+    
+    const centerY = h / 2;
+    const centerX = w / 2;
+    const fontSize = 2 * h / 3;
+    const radius = 8;
+    
+    ctx.font = `${fontSize}px ${UI_CONFIG.fonts.main}`;
+    ctx.textBaseline = 'middle';
+
+    // 1. 确定文字内容
+    let nameB = "黑方";
+    let nameW = "白方";
+
+    if (mode === 1) { // 人机模式
+        nameB = (playerColor === 1) ? "玩家" : "人机";
+        nameW = (playerColor === 0) ? "玩家" : "人机";
+    } else { // 人人模式
+        nameB = "玩家1";
+        nameW = "玩家2";
+    }
+
+    // 2. 绘制左侧（黑棋）
+    // 测量文字宽度以便居中对齐
+    const textB = `${nameB}  ${winB}`;
+    const metricsB = ctx.measureText(textB);
+    const leftStart = centerX - metricsB.width - 40; // 这里的 40 是给棋子预留的空间
+
+    drawChessIcon(ctx, leftStart, centerY, radius, 'black');
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'left';
+    ctx.fillText(textB, leftStart + radius + 10, centerY);
+
+    // 3. 绘制中间的分隔符
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'grey';
+    ctx.fillText("VS", centerX, centerY);
+
+    // 4. 绘制右侧（白棋）
+    const textW = `${winW}  ${nameW}`;
+    const rightStart = centerX + 30; // 偏移出中间 VS 的位置
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'black';
+    ctx.fillText(textW, rightStart, centerY);
+    
+    // 棋子放在文字后面
+    const metricsW = ctx.measureText(textW);
+    drawChessIcon(ctx, rightStart + metricsW.width + 15, centerY, radius, 'white');
 }
