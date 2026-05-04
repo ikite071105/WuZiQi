@@ -172,7 +172,7 @@
         // 前面用了scale(dpr, dpr)，Path2D 检测时需要对应这个比例
         const x0 = cssX * (boardCanvas.width / rect.width);
         const y0 = cssY * (boardCanvas.height / rect.height);
-        
+
         //游戏进行时：落子
         //条件：人人 或 人机&&玩家行动
         if (gameState.current == gameState.PLAYING && 
@@ -180,8 +180,8 @@
             // 如果正在等待确认，不允许点棋盘其他地方
             if (isWaitingConfirm) return;
 
-            let x1 = xy_from_canvas_to_board(x0, y0, board_startW, board_startH, dis, wzq).x1;
-            let y1 = xy_from_canvas_to_board(x0, y0, board_startW, board_startH, dis, wzq).y1;
+            let x1 = xy_from_canvas_to_board(cssX, cssY, board_startW, board_startH, dis, wzq).x1;
+            let y1 = xy_from_canvas_to_board(cssX, cssY, board_startW, board_startH, dis, wzq).y1;
 
             if (wzq.board[x1][y1] == 0) {
                 // 1. 落下棋子
@@ -204,21 +204,7 @@
 
                     //人下完了人机下
                     if(current_mode){
-                        current_player ^= current_player;//感觉事后可以删掉
-                        //调用人机下棋函数
-                        setTimeout(() => {
-                            let x = aiAction_normal(wzq,current_chess)[0];
-                            let y = aiAction_normal(wzq,current_chess)[1];
-                            wzq.board[x][y] = current_chess + 1;
-                            current_player = 0;
-                            if (checkOver(current_chess, x, y)) {
-                                gameState.current = gameState.GAMEOVER;
-                            } else {
-                                current_chess = 1 - current_chess;
-                                updateCurrentChessDisplay();
-                            }
-                            current_player = 1;
-                        }, 1000);
+                        aiAction();
                     }
                 }
             }
@@ -431,22 +417,27 @@
 
             //人下完了人机下
             if(current_mode){
-                current_player ^= current_player;//感觉事后可以删掉
-                //调用人机下棋函数
-                setTimeout(() => {
-                    let x = aiAction_normal(wzq,current_chess)[0];
-                    let y = aiAction_normal(wzq,current_chess)[1];
-                    wzq.board[x][y] = current_chess + 1;
-                    current_player = 0;
-                    if (checkOver(current_chess, x, y)) {
-                        gameState.current = gameState.GAMEOVER;
-                    } else {
-                        current_chess = 1 - current_chess;
-                        updateCurrentChessDisplay();
-                    }
-                    current_player = 1;
-                }, 1000);
+                aiAction();
             }
+        }
+
+        //执行ai行动
+        function aiAction(){
+            current_player = 0;//感觉事后可以删掉
+            //调用人机下棋函数
+            setTimeout(() => {
+                let x = aiAction_normal(wzq,current_chess)[0];
+                let y = aiAction_normal(wzq,current_chess)[1];
+                wzq.board[x][y] = current_chess + 1;
+                current_player = 0;
+                if (checkOver(current_chess, x, y)) {
+                    gameState.current = gameState.GAMEOVER;
+                } else {
+                    current_chess = 1 - current_chess;
+                    updateCurrentChessDisplay();
+                }
+                current_player = 1;
+            }, 1000);
         }
 
         //开启新游戏的函数
