@@ -45,24 +45,34 @@ const SCORE = {
 //ai行动：普通
 function aiAction_normal(wzq, aiColor) {
     let bestScore = -1;
-    let x=0;
-    let y=0;
+    let bestMoves = []; // 存储所有最高分的坐标点
     let playerColor = 1 - aiColor;
 
     for (let i = 0; i < wzq.size; i++) {
         for (let j = 0; j < wzq.size; j++) {
             if (wzq.board[i][j] === 0) {
-                // 计算该点的分值（防守分 + 进攻分）
+                // 计算该点的综合分值
                 let score = evaluatePoint(wzq, i, j, aiColor) + evaluatePoint(wzq, i, j, playerColor) * 0.8;
+                
                 if (score > bestScore) {
+                    // 发现更好的点，重置数组
                     bestScore = score;
-                    x=i;
-                    y=j;
+                    bestMoves = [[i, j]];
+                } else if (score === bestScore && score !== -1) {
+                    // 分数相同，加入候选名单
+                    bestMoves.push([i, j]);
                 }
             }
         }
     }
-    return [x,y];
+
+    // 从所有最高分的位置中随机选一个
+    if (bestMoves.length > 0) {
+        const randomIndex = Math.floor(Math.random() * bestMoves.length);
+        return bestMoves[randomIndex];
+    }
+
+    return aiAction_easy(wzq);
 }
 
 // 评估函数：检查(x,y)点在四个方向上的连子情况
