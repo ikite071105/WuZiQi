@@ -149,9 +149,17 @@
             board.clearRect(0, 0, w, h);
 
             switch(gameState.current) {
-                case gameState.PLAYING: draw_board(board, board_startW, board_startH, board_W, board_H, wzq);; break;
+                case gameState.PLAYING: draw_board(board, board_startW, board_startH, board_W, board_H, wzq); break;
                 case gameState.NEWGAME: draw_newGame(board, wzq, w, h); break;
                 case gameState.GAMEOVER: draw_gameOver(board, wzq, w, h, current_chess); break;
+                case gameState.GAMEOVER_BOARD:{
+                    draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
+                    board.save();
+                    board.fillStyle = 'rgba(131,139,144,0.3)';
+                    board.fillRect(0, 0, w, h);
+                    board.restore();
+                    break;
+                }
                 case gameState.BOARDSET: draw_boardSet(board, wzq, w, h, size); break;
                 case gameState.MODECHOOSE: draw_modeChoose(board, wzq, w, h, current_mode); break;
                 case gameState.MODESET_0: draw_modeSet_0(board, wzq, w, h, colorFirst); break;
@@ -244,10 +252,18 @@
         //游戏结束：点击开始新游戏
         else if(gameState.current==gameState.GAMEOVER){
             let isNewgame = board.isPointInPath(newgamePath,x0,y0);
+            let isShowBoard = board.isPointInPath(viewBoardPath,x0,y0);
             if(isNewgame){
                 startNewGame();
                 gameState.current = gameState.PLAYING;
-            }     
+            }
+            else if(isShowBoard){
+                gameState.current = gameState.GAMEOVER_BOARD;
+            }   
+        }
+        //游戏结束：棋盘展示
+        else if(gameState.current==gameState.GAMEOVER_BOARD){
+            gameState.current = gameState.GAMEOVER;
         }
         //棋盘大小设置
         else if(gameState.current==gameState.BOARDSET){
