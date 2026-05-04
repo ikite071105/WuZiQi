@@ -184,24 +184,25 @@
                         current_chess = 1 - current_chess;
                         updateCurrentChessDisplay();
                     }
-                }
-                //人下完了人机下
-                if(current_mode){
-                    current_player ^= current_player;//感觉事后可以删掉
-                    //调用人机下棋函数
-                    setTimeout(() => {
-                        let x = aiAction_normal(wzq,current_chess)[0];
-                        let y = aiAction_normal(wzq,current_chess)[1];
-                        wzq.board[x][y] = current_chess + 1;
-                        current_player = 0;
-                        if (checkOver(current_chess, x, y)) {
-                            gameState.current = gameState.GAMEOVER;
-                        } else {
-                            current_chess = 1 - current_chess;
-                            updateCurrentChessDisplay();
-                        }
-                        current_player = 1;
-                    }, 1000);
+
+                    //人下完了人机下
+                    if(current_mode){
+                        current_player ^= current_player;//感觉事后可以删掉
+                        //调用人机下棋函数
+                        setTimeout(() => {
+                            let x = aiAction_normal(wzq,current_chess)[0];
+                            let y = aiAction_normal(wzq,current_chess)[1];
+                            wzq.board[x][y] = current_chess + 1;
+                            current_player = 0;
+                            if (checkOver(current_chess, x, y)) {
+                                gameState.current = gameState.GAMEOVER;
+                            } else {
+                                current_chess = 1 - current_chess;
+                                updateCurrentChessDisplay();
+                            }
+                            current_player = 1;
+                        }, 1000);
+                    }
                 }
             }
         }
@@ -403,6 +404,25 @@
             } else {
                 current_chess = 1 - current_chess;
                 updateCurrentChessDisplay();
+            }
+
+            //人下完了人机下
+            if(current_mode){
+                current_player ^= current_player;//感觉事后可以删掉
+                //调用人机下棋函数
+                setTimeout(() => {
+                    let x = aiAction_normal(wzq,current_chess)[0];
+                    let y = aiAction_normal(wzq,current_chess)[1];
+                    wzq.board[x][y] = current_chess + 1;
+                    current_player = 0;
+                    if (checkOver(current_chess, x, y)) {
+                        gameState.current = gameState.GAMEOVER;
+                    } else {
+                        current_chess = 1 - current_chess;
+                        updateCurrentChessDisplay();
+                    }
+                    current_player = 1;
+                }, 1000);
             }
         }
 
