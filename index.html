@@ -101,14 +101,21 @@
 
     <script>
         //绘图用
+        //获取设备像素比
+        const dpr = window.devicePixelRatio || 1;
         //棋盘区域
         let w = window.innerWidth;
         let h = w;
         var boardCanvas = document.getElementById('chessboard');
-        boardCanvas.width = w;
-        boardCanvas.height = h;
+        //设置 Canvas 绘图表面:（内部分辨率）- 放大 dpr 倍
+        boardCanvas.width = w * dpr;
+        boardCanvas.height = h * dpr;
+        // 设置 Canvas CSS 显示尺寸
+        boardCanvas.style.width = w + 'px';
+        boardCanvas.style.height = h + 'px';
         // 获取画笔（上下文对象）
         var board = boardCanvas.getContext('2d');
+        board.scale(dpr, dpr);
         console.log(board);
 
         let board_startW = w/12;
@@ -153,9 +160,19 @@
 
     <script>
         //棋盘点击事件
-       boardCanvas.onclick = (e) => {
-        let x0 = e.offsetX;
-        let y0 = e.offsetY;
+        boardCanvas.onclick = (e) => {
+        // let x0 = e.offsetX;
+        // let y0 = e.offsetY;
+        // 获取点击位置相对于 canvas 元素的坐标
+        const rect = boardCanvas.getBoundingClientRect();
+        // 计算出 CSS 像素坐标
+        const cssX = e.clientX - rect.left;
+        const cssY = e.clientY - rect.top;
+        // 将坐标映射到 Canvas 内部的实际坐标系
+        // 前面用了scale(dpr, dpr)，Path2D 检测时需要对应这个比例
+        const x0 = cssX * (boardCanvas.width / rect.width);
+        const y0 = cssY * (boardCanvas.height / rect.height);
+        
         //游戏进行时：落子
         //条件：人人 或 人机&&玩家行动
         if (gameState.current == gameState.PLAYING && 
@@ -378,6 +395,11 @@
             
             // 调试用，可以在控制台看状态
             console.log("悔棋功能:", regret_enable ? "已开启" : "已关闭");
+
+            //如果在已落子时关闭悔棋，则隐藏按钮，直接推进
+            if(isWaitingConfirm&&status==false){
+                confirmAction();
+            }
         }
 
         // 悔棋函数
