@@ -1,6 +1,6 @@
 const UI_CONFIG = {
     colors: {
-        overlay: 'rgba(0,0,70,0.4)',
+        overlay: 'rgba(131,139,144,0.3)',
         modalBg: 'lightblue',
         contentBg: 'white',
         primary: 'darkblue',
@@ -156,7 +156,10 @@ function draw_newGame(ctx, wzq, w, h) {
 
 function draw_gameOver(ctx, wzq, w, h, current_chess) {
     draw_board(ctx, board_startW, board_startH, board_W, board_H, wzq);
-    drawModalBase(ctx, w, h);
+    
+    // 1. 增大显示框高度：假设原来的 drawModalBase 内部比例较小，
+    // 这里确保背景框足够大，能覆盖到底下的第二个按钮
+    drawModalBase(ctx, w, h, 1/2); 
 
     const fontSize = (h / 3) / 6;
     const winner = (current_chess === 1) ? '● 黑子' : '○ 白子';
@@ -164,12 +167,16 @@ function draw_gameOver(ctx, wzq, w, h, current_chess) {
     ctx.fillStyle = 'black';
     ctx.font = `bold ${fontSize}px serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(`游戏结束，胜者为 ${winner}`, w/2, h/2 - fontSize);
+    ctx.fillText(`游戏结束，胜者为 ${winner}`, w/2, h/2 - fontSize * 1.8);
 
-    // 绘制大按钮
+    // 2. 绘制大按钮（原有按钮）
     const btnW = w * 0.7;
     const btnH = fontSize * 1.8;
-    newgamePath = drawButton(ctx, w/2 - btnW/2, h/2 + fontSize/7, btnW, btnH, "点击开始新游戏", 'rgb(125,149,146)', fontSize);
+    newgamePath = drawButton(ctx, w/2 - btnW/2, h/2 - fontSize/2, btnW, btnH, "点击开始新游戏", 'rgb(156,172,175)', fontSize);
+
+    // 3. 新增：点击显示棋盘按键
+    // 位置在第一个按钮下方，垂直偏移量设置为 btnH + 适当间距
+    viewBoardPath = drawButton(ctx, w/2 - btnW/2, h/2 - fontSize/2 + btnH*1.2, btnW, btnH, "点击显示棋盘", 'rgb(214,216,194)', fontSize);
 }
 
 function draw_boardSet(ctx, wzq, w, h, size) {
