@@ -12,6 +12,7 @@
             width: 100%;
             height: 4vh;
             margin-top: 4%;
+            margin-bottom: 1%;
         }
         #lowerItems {
             display: flex;
@@ -42,7 +43,10 @@
     </style>
 </head>
 <body>
-    <div>这里写胜负情况</div>
+    <div style="text-align: center; margin-top: 10px;">
+        <canvas id="winCount"></canvas>
+    </div>
+
     <div id="upperButtons">
         <button id="newGame" onclick="newGame_click(gameState)">新游戏</button>
         <button id="modeChoose" onclick="modeChoose_click(gameState)">模式选择</button>
@@ -96,6 +100,11 @@
         //人机模式下玩家的颜色及先后手
         let playerColor = 0;
         let playerFirst = 1;    //1玩家0人机
+        //状态保存变量，若更改设置时最终设置与保存的设置相同则胜负计数不清零
+        let last_mode = 0;
+        let last_colorFirst = 0;
+        let last_playerColor = 0;
+        let last_playerFirst = 1;
         let current_player = 1; //1玩家0人机
     </script>
 
@@ -103,6 +112,17 @@
         //绘图用
         //获取设备像素比
         const dpr = window.devicePixelRatio || 1;
+        //比分区域
+        const countCanvas = document.getElementById('winCount');
+        const cw = window.innerWidth * 0.9; // 占据 90% 宽度
+        const ch = cw / 10; 
+        
+        countCanvas.width = cw * dpr;
+        countCanvas.height = ch * dpr;
+        countCanvas.style.width = cw + 'px';
+        countCanvas.style.height = ch + 'px';
+        const countCtx = countCanvas.getContext('2d');
+        countCtx.scale(dpr, dpr);
         //棋盘区域
         let w = window.innerWidth;
         let h = w;
@@ -127,10 +147,6 @@
 
         function render() {
             board.clearRect(0, 0, w, h);
-            // 永远先画底色或基础棋盘
-            if (gameState.current !== gameState.PLAYING) {
-                // 非进行时可以统一加个背景处理，或者让各函数自己画 draw_board
-            }
 
             switch(gameState.current) {
                 case gameState.PLAYING: draw_board(board, board_startW, board_startH, board_W, board_H, wzq);; break;
@@ -142,6 +158,9 @@
                 case gameState.MODESET_1: draw_modeSet_1(board, wzq, w, h, playerColor, playerFirst); break;
                 // ... 其他状态
             }
+
+            //比分栏
+            drawWinCount(countCtx, countCanvas.width/dpr, countCanvas.height/dpr, winCount_B, winCount_W, current_mode);
             requestAnimationFrame(render);
         }
         render();
@@ -197,6 +216,8 @@
                     // 没开悔棋
                     if (checkOver(current_chess, x1, y1)) {
                         gameState.current = gameState.GAMEOVER;
+                        if (current_chess === 1) winCount_B++;
+                        else winCount_W++;
                     } else {
                         current_chess = 1 - current_chess;
                         updateCurrentChessDisplay();
@@ -277,6 +298,11 @@
                 updateCurrentChessDisplay();
                 startNewGame();
                 gameState.current = gameState.PLAYING;
+                if(current_mode!=last_mode || colorFirst!=last_colorFirst){
+                    last_mode = current_mode;
+                    last_colorFirst = colorFirst;
+                    winCountClear();
+                }
             }else{
                 gameState.current = gameState.MODECHOOSE;
             }   
@@ -299,6 +325,12 @@
                 updateCurrentChessDisplay();
                 startNewGame();
                 gameState.current = gameState.PLAYING;
+                if(current_mode!=last_mode || playerColor!=last_playerColor || playerFirst!=last_playerFirst){
+                    last_mode = current_mode;
+                    last_playerColor = playerColor;
+                    last_playerFirst = playerFirst;
+                    winCountClear();
+                }
             }else{
                 gameState.current = gameState.MODECHOOSE;
             }   
@@ -410,6 +442,8 @@
             // 检查胜负
             if (checkOver(current_chess, lastStep.x, lastStep.y)) {
                 gameState.current = gameState.GAMEOVER;
+                if (current_chess === 1) winCount_B++;
+                else winCount_W++;
             } else {
                 current_chess = 1 - current_chess;
                 updateCurrentChessDisplay();
@@ -426,12 +460,16 @@
             current_player = 0;//感觉事后可以删掉
             //调用人机下棋函数
             setTimeout(() => {
-                let x = aiAction_normal(wzq,current_chess)[0];
-                let y = aiAction_normal(wzq,current_chess)[1];
+                let aiMove = aiAction_normal(wzq, current_chess); 
+
+                let x = aiMove[0];
+                let y = aiMove[1];
                 wzq.board[x][y] = current_chess + 1;
                 current_player = 0;
                 if (checkOver(current_chess, x, y)) {
                     gameState.current = gameState.GAMEOVER;
+                    if (current_chess === 1) winCount_B++;
+                    else winCount_W++;
                 } else {
                     current_chess = 1 - current_chess;
                     updateCurrentChessDisplay();
@@ -462,8 +500,13 @@
                 }
             }
         }
+
+        //输赢记录清零函数
+        function winCountClear(){
+            winCount_B = 0;
+            winCount_W = 0;
+        }
     </script>
 
-    
 </body>
 </html>
