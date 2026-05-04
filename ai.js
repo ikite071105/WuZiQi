@@ -161,3 +161,20 @@ function aiAction_easy(wzq){
     }
     return [randomX,randomY];
 }
+
+// 获取开局第一步
+function getOpeningMove(wzq) {
+    let center = Math.floor(wzq.size / 2);
+    // 定义中心随机范围的偏移量（例如在中心点上下左右 1 格内随机）
+    // range 为 1 意味着在中心 3x3 区域随机
+    let range = 1; 
+    
+    let x = center + Math.floor(Math.random() * (range * 2 + 1)) - range;
+    let y = center + Math.floor(Math.random() * (range * 2 + 1)) - range;
+    
+    // 确保坐标不越界（虽然在中心区域一般不会越界）
+    x = Math.max(0, Math.min(wzq.size - 1, x));
+    y = Math.max(0, Math.min(wzq.size - 1, y));
+    
+    return [x, y];
+}
