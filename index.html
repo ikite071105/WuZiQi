@@ -418,8 +418,8 @@
                     current_player = 0;
                     current_chess = 1-playerColor;
                     setTimeout(() => {
-                    let x = aiAction_easy(wzq)[0];
-                    let y = aiAction_easy(wzq)[1];
+                    let x = getOpeningMove(wzq)[0];
+                    let y = getOpeningMove(wzq)[1];
                     wzq.board[x][y] = current_chess + 1;
                     current_player = 1;
                     current_chess = 1 - current_chess;
