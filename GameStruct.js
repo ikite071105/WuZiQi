@@ -33,7 +33,6 @@ class Chess {
     let y = xy_from_board_to_canvas(x0,y0,board_startW,board_startH,dis).y2;
     
     this.chessPath = new Path2D();
-    this.chessPath.moveTo(x,y);
     board.save();
     board.fillStyle = this.color;
     board.strokeStyle = 'grey';
