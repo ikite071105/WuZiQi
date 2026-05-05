@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
+        /*顶部四个按钮*/
         #upperButtons{
             display: flex;
             justify-content: space-around;
@@ -14,6 +15,7 @@
             margin-top: 4%;
             margin-bottom: 1%;
         }
+        /*底部内容*/
         #lowerItems {
             display: flex;
             justify-content: space-between;
@@ -22,22 +24,21 @@
             box-sizing: border-box;
         }
         #leftChild {
-            flex: 1; /* 占据剩余空间 */
-            font-size: 4vw; /* 字体随屏幕宽度变化，PC端可改为固定像素 */
-            /* min-font-size: 14px; */
+            flex: 1;        /* 占据剩余空间 */
+            font-size: 4vw; 
         }
         #rightChild {
             flex: 1;
-            display: none; /* 由 JS 控制显示 */
-            flex-direction: row; /* 改为横向排列 */
+            display: none;       /* 由 JS 控制显示 */
+            flex-direction: row; /* 横向排列 */
             justify-content: flex-end; /* 靠右对齐 */
-            gap: 10px; /* 两个按钮之间的间距 */
+            gap: 10px;           /* 两个按钮之间的间距 */
         }
         /* 按钮样式自适应 */
         #rightChild button {
             padding: 8px 12px;
-            font-size: 3.5vw; /* 按钮文字自适应 */
-            white-space: nowrap; /* 防止文字换行 */
+            font-size: 3.5vw; 
+            white-space: nowrap; 
             cursor: pointer;
         }
     </style>
@@ -51,7 +52,7 @@
         <button id="newGame" onclick="newGame_click(gameState)">新游戏</button>
         <button id="modeChoose" onclick="modeChoose_click(gameState)">模式选择</button>
         <button id="boardSet" onclick="boardSet_click(gameState)">棋盘设置</button>
-        <button id="ooooohhhh" onclick="ooooohhhh_click(gameState)">开挂?!</button>
+        <button id="ooooohhhh" onclick="ooooohhhh_click(chessConnect)">开挂?!</button>
     </div>
     
 
@@ -63,7 +64,6 @@
             <span id="currentChess"></span>
             <br>
             <span id="regret">悔棋功能：
-                <!-- 绑定 onchange，并传入 true/false -->
                 <input type="radio" name="regret_choice" onchange="setRegret(true)">开
                 <input type="radio" name="regret_choice" onchange="setRegret(false)" checked>关
             </span>
@@ -80,41 +80,47 @@
     <script src="./ai.js"></script>
 
     <script>
-        let size = 12;
-        let wzq = new GobangGame(size);
-        let chessB = new Chess('black');
-        let chessW = new Chess('white');
-        let current_chess = 0; //0白；1黑
-        let current_mode = 0;  //0人人；1人机
-        //悔棋
-        let regret_enable = false;
-        //上一步落子坐标
-        let lastStep = { x: -1, y: -1 };
-        //等待确认
-        let isWaitingConfirm = false;
+        let size = 12; //当前棋盘大小
+        let wzq = new GobangGame(size);  //棋盘
+        let chessB = new Chess('black'); //黑子
+        let chessW = new Chess('white'); //白子
+        let current_chess = 0; //当前棋子颜色（0白/1黑）
+        let current_mode = 0;  //当前游戏模式（0人人/1人机）
+        let colorFirst = 0;    //先手颜色（0白/1黑）
+        let current_player = 1;//当前玩家（1玩家/0人机）
+
+        //悔棋相关
+        let regret_enable = false;      //当前是否开启悔棋
+        let lastStep = { x: -1, y: -1 };//上一步落子坐标
+        let isWaitingConfirm = false;   //等待确认
+
         //黑白正负次数记录
-        let winCount_B = 0;
-        let winCount_W = 0;
-        //先手颜色
-        let colorFirst = 0; //0白1黑
-        //人机模式下玩家的颜色及先后手
-        let playerColor = 0;
-        let playerFirst = 1;    //1玩家0人机
+        let winCount_B = 0; //黑子胜利次数
+        let winCount_W = 0; //白子胜利次数
+
+        //人机模式相关
+        let playerColor = 0; //玩家棋子颜色（0白/1黑）
+        let playerFirst = 1; //先手角色（1玩家/0人机）
+
         //状态保存变量，若更改设置时最终设置与保存的设置相同则胜负计数不清零
-        let last_mode = 0;
-        let last_colorFirst = 0;
-        let last_playerColor = 0;
-        let last_playerFirst = 1;
-        let current_player = 1; //1玩家0人机
+        let last_mode = 0;      //上一次设置的游戏模式（0人人/1人机）
+        let last_colorFirst = 0;//上一次设置的先手颜色（0白/1黑）
+        let last_playerColor = 0; //上一次设置的玩家颜色（0白1黑）
+        let last_playerFirst = 1; //上一次设置的先手角色（1玩家0人机）
+
+        //棋子连接方式
+        chessConnect.current = chessConnect.CHESS_ONLY;
     </script>
 
     <script>
-        //绘图用
+        //绘图
         //获取设备像素比
         const dpr = window.devicePixelRatio || 1;
+
         //比分区域
         const countCanvas = document.getElementById('winCount');
-        const cw = window.innerWidth * 0.9; // 占据 90% 宽度
+        //确认物理宽高
+        const cw = window.innerWidth * 0.9; // 占据90%宽度
         const ch = cw / 10; 
         
         countCanvas.width = cw * dpr;
@@ -123,21 +129,24 @@
         countCanvas.style.height = ch + 'px';
         const countCtx = countCanvas.getContext('2d');
         countCtx.scale(dpr, dpr);
+
         //棋盘区域
         let w = window.innerWidth;
         let h = w;
         var boardCanvas = document.getElementById('chessboard');
-        //设置 Canvas 绘图表面:（内部分辨率）- 放大 dpr 倍
+        // 设置设备显示下Canvas画布内部的实际像素高度
         boardCanvas.width = w * dpr;
         boardCanvas.height = h * dpr;
-        // 设置 Canvas CSS 显示尺寸
+        // 设置 Canvas 在网页上的显示尺寸
         boardCanvas.style.width = w + 'px';
         boardCanvas.style.height = h + 'px';
         // 获取画笔（上下文对象）
         var board = boardCanvas.getContext('2d');
+        // 缩放绘图坐标系
         board.scale(dpr, dpr);
         console.log(board);
 
+        //棋盘的起始位置与宽高
         let board_startW = w/12;
         let board_startH = h/12;
         let board_W = 10*w/12;
@@ -148,6 +157,7 @@
         function render() {
             board.clearRect(0, 0, w, h);
 
+            //不同状态下的棋盘界面绘制
             switch(gameState.current) {
                 case gameState.PLAYING: draw_board(board, board_startW, board_startH, board_W, board_H, wzq); break;
                 case gameState.NEWGAME: draw_newGame(board, wzq, w, h); break;
@@ -188,8 +198,6 @@
     <script>
         //棋盘点击事件
         boardCanvas.onclick = (e) => {
-        // let x0 = e.offsetX;
-        // let y0 = e.offsetY;
         // 获取点击位置相对于 canvas 元素的坐标
         const rect = boardCanvas.getBoundingClientRect();
         // 计算出 CSS 像素坐标
@@ -201,22 +209,25 @@
         const y0 = cssY * (boardCanvas.height / rect.height);
 
         //游戏进行时：落子
-        //条件：人人 或 人机&&玩家行动
+        //条件：人人 || 人机&&玩家行动
         if (gameState.current == gameState.PLAYING && 
         ((!current_mode) || (current_mode && current_player))) {
-            // 如果正在等待确认，不允许点棋盘其他地方
+            // 如果正在等待确认，点击棋盘无效
             if (isWaitingConfirm) return;
 
-            let x1 = xy_from_canvas_to_board(cssX, cssY, board_startW, board_startH, dis, wzq).x1;
-            let y1 = xy_from_canvas_to_board(cssX, cssY, board_startW, board_startH, dis, wzq).y1;
+            // 获取对应棋盘坐标
+            let pos1 = xy_from_canvas_to_board(cssX, cssY, board_startW, board_startH, dis, wzq);
+            let x1 = pos1.x1;
+            let y1 = pos1.y1;
 
+            // 坐标上暂无落子
             if (wzq.board[x1][y1] == 0) {
-                // 1. 落下棋子
+                // 落子
                 wzq.board[x1][y1] = current_chess + 1;
                 lastStep = { x: x1, y: y1 }; // 记录坐标
                 draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
 
-                // 2. 判断是否开启悔棋功能
+                // 判断是否开启悔棋功能
                 if (regret_enable) {
                     isWaitingConfirm = true;
                     document.getElementById('rightChild').style.display = 'block'; // 显示按钮
@@ -230,7 +241,6 @@
                         current_chess = 1 - current_chess;
                         updateCurrentChessDisplay();
                     }
-
                     //人下完了人机下
                     if(current_mode){
                         aiAction();
@@ -249,7 +259,7 @@
                 gameState.current = gameState.PLAYING;
             }     
         }
-        //游戏结束：点击开始新游戏
+        //游戏结束：点击开始新游戏 点击显示棋盘
         else if(gameState.current==gameState.GAMEOVER){
             let isNewgame = board.isPointInPath(newgamePath,x0,y0);
             let isShowBoard = board.isPointInPath(viewBoardPath,x0,y0);
@@ -427,9 +437,6 @@
         function setRegret(status) {
             regret_enable = status;
             
-            // 调试用，可以在控制台看状态
-            console.log("悔棋功能:", regret_enable ? "已开启" : "已关闭");
-
             //如果在已落子时关闭悔棋，则隐藏按钮，直接推进
             if(isWaitingConfirm&&status==false){
                 confirmAction();
@@ -444,8 +451,6 @@
             isWaitingConfirm = false;
             // 隐藏按钮
             document.getElementById('rightChild').style.display = 'none';
-
-            draw_board(board, board_startW, board_startH, board_W, board_H, wzq);
         }
 
         // 确认函数
@@ -464,8 +469,7 @@
                 current_chess = 1 - current_chess;
                 updateCurrentChessDisplay();
             }
-
-            //人下完了人机下
+            //人机模式下，人下完了人机下
             if(current_mode){
                 aiAction();
             }
@@ -473,7 +477,7 @@
 
         //执行ai行动
         function aiAction(){
-            current_player = 0;//感觉事后可以删掉
+            current_player = 0;//放止玩家在人机行动时偷步，删不得
             //调用人机下棋函数
             setTimeout(() => {
                 let aiMove = aiAction_normal(wzq, current_chess); 
@@ -497,6 +501,8 @@
         //开启新游戏的函数
         function startNewGame(){
             wzq.board = Array.from({ length: size }, () => Array(size).fill(0));
+            current_chess = colorFirst;
+            updateCurrentChessDisplay();
             if(current_mode){
                 //人机模式
                 if(playerFirst){
