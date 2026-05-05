@@ -137,7 +137,11 @@ function draw_board(ctx, board_startW, board_startH, board_W, board_H, wzq) {
                     ctx.setLineDash([2,2]);
                     //虚线的偏移
                     ctx.lineDashOffset = index;
-                    index+=0.03;
+                    if(chessConnect.current==1){
+                        index+=0.015;
+                    }else{
+                        index+=0.03; 
+                    }
                     if(index > 100) index = 0;
                     //右
                     let tempX = i+1;
